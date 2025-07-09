@@ -9,12 +9,33 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String
-  passwordHash String  @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String             @id @default(uuid())
+  email         String             @unique
+  name          String
+  passwordHash  String             @map("password_hash")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  conversations ConversationUser[]
 
   @@map("user")
+}
+
+model ConversationUser {
+  id String @id @default(uuid())
+  deletedAt DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model Conversation {
+  id              String             @id @default(uuid())
+  participants    ConversationUser[]
+  lastMessageId   String?
+  lastMessageDate DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 }
