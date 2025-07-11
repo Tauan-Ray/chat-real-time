@@ -4,7 +4,7 @@ import 'server-only'
 import { jwtVerify } from 'jose'
 import { service_api } from '@/service/api/service.api';
 import { cookies } from 'next/headers'
-import { USER_TOKEN, USER_REFRESH_TOKEN, getJwtSecretKey } from '@/lib/index';
+import { USER_TOKEN, USER_REFRESH_TOKEN, getJwtSecretKey, handleApiError } from '@/lib/index';
 
 type SessionPayload = {
   name?: string;
@@ -17,6 +17,16 @@ type EncryptProps = {
   refresh_token: string;
   status?: number | string;
   message?: string;
+}
+
+export type UserProps = {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date
+  updatedat: Date
+  message?: string;
+  status?: number | string;
 }
 
 export async function encrypt(payload: SessionPayload, type: 'login' | 'register'): Promise<EncryptProps> {
@@ -40,7 +50,6 @@ export async function encrypt(payload: SessionPayload, type: 'login' | 'register
       return { message, status: 500 }
     })
 
-    console.log(response)
     return response
 }
 
@@ -57,6 +66,16 @@ export async function decrypt(session: string | undefined = '') {
     }
   }
 }
+
+export async function getUser(): Promise<UserProps> {
+  return await service_api.get('/user')
+    .then(({ data }) => {
+      const { passwordHash, ...result } = data;
+      return result;
+    })
+    .catch(handleApiError)
+}
+
 
 export async function createSession(payload: SessionPayload, type: 'login' | 'register') {
   const session = await encrypt(payload, type)
@@ -96,6 +115,8 @@ export async function updateSession() {
       sameSite: 'lax',
       path: '/',
     })
+
+    return { message: 'New token access created' }
   } else {
     return newAcessToken
   }

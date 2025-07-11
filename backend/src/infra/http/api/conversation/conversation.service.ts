@@ -1,10 +1,17 @@
 import { PrismaService } from '@infra/database/prisma.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Message, MessageDocument } from '../message/schema/message.schema';
+import { Model } from 'mongoose';
 
 
 @Injectable()
 export class ConversationService {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        @InjectModel(Message.name)
+        private messageModel: Model<MessageDocument>
+    ) {}
 
     async getConversations(userId: string, page = 1, pageSize = 10) {
         const conversations = await this.prisma.conversationUser.findMany({
@@ -24,20 +31,28 @@ export class ConversationService {
                     include: {
                         participants: {
                             where: { userId: { not: userId } },
-                            include: { user: true },
+                            select: { user: { select: { name: true } } }
                         },
                     },
                 },
             },
         })
 
-        return conversations.map(conversation => ({
-            conversationId: conversation.conversationId,
-            lastMessageId: conversation.conversation.lastMessageId,
-            lastMessageDate: conversation.conversation.lastMessageDate,
-            participant: conversation.conversation.participants[0]?.user,
+        const messageIds = conversations.map((c) => c.conversation.lastMessageId).filter(Boolean)
+        const messages = await this.messageModel.find({ _id: { $in: messageIds } }).lean()
 
-        }))
+        return conversations.map((c) => {
+            const lastMessage = messages.find(
+                (msg) => String(msg._id) === String(c.conversation.lastMessageId)
+            )
+
+            return {
+                conversationId: c.conversationId,
+                lastMessageContent: lastMessage?.content || null,
+                lastMessageDate: c.conversation.lastMessageDate,
+                name: c.conversation.participants[0]?.user.name || 'Desconhecido'
+            }
+        })
     }
 
     async createConversation(userId: string, otherParticipantId: string) {

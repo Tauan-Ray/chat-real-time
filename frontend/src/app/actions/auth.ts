@@ -9,7 +9,7 @@ export async function signIn(value: z.infer<typeof LoginFormSchema>) {
   const res = await createSession(value, 'login');
 
   if (!res?.message) {
-    return redirect('/')
+    return redirect('/conversation')
   } else {
     if (res.status == HttpStatusCode.Unauthorized) {
       toast.warning(res.message, {
@@ -28,10 +28,9 @@ export async function signIn(value: z.infer<typeof LoginFormSchema>) {
 export async function registerUser(value: z.infer<typeof RegisterFormSchema>) {
   const { confirmPassword, ...userData } = value
   const res = await createSession(userData, 'register')
-  console.log(res)
 
   if (!res?.message) {
-    return redirect('/')
+    return redirect('/conversation')
   } else {
     if (res.status === HttpStatusCode.BadRequest) {
       toast.warning(res.message, {

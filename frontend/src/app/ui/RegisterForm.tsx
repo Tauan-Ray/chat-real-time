@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { FormControl, FormField, FormItem, FormLabel, Form, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { EyeIcon, EyeOffIcon, LockKeyhole, Mail, User } from "lucide-react"
+import { EyeIcon, EyeOffIcon, Loader2, LockKeyhole, Mail, User, UserPlus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from '@/components/pt-zod'
@@ -119,7 +119,14 @@ const RegisterForm = ({ authMode, setAuthMode }: RegisterFormProps) => {
                 </form>
             </Form>
             <Button disabled={isLoading} form="form-login" className="w-full rounded-3xl py-5 mt-7" onClick={form.handleSubmit(onSubmit)}>
-                { isLoading ? <p>Carregando</p> : <p>Registrar</p> }
+                {isLoading ? (
+                    <Loader2 size={22} className="animate-spin text-white" />
+                ): (
+                    <>
+                        <UserPlus size={20} className="text-white" />
+                        <span className="font-medium">Cadastrar</span>
+                    </>
+                )}
             </Button>
         </>
     )
