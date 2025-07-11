@@ -7,10 +7,10 @@ import { MessageCircleOff } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export type ConversationProps = {
-  conversationId: string
-  name: string
-  lastMessageContent: string
-  lastMessageDate: string
+  name: string;
+  conversationId: string;
+  lastMessageContent: string;
+  lastMessageDate: string;
 }
 
 const AllConversation = () => {
@@ -22,15 +22,13 @@ const AllConversation = () => {
       setIsLoading(true)
 
       const res = await getConversations()
-      setConversations(res)
+      res.status !== 200 ? setConversations([]) : setConversations(res.conversations)
 
       setIsLoading(false)
     }
 
     fetchConversations()
   }, [])
-
-  console.log(conversations)
 
   return (
     <div className="space-y-4">
