@@ -5,10 +5,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Message, MessageSchema } from './schema/message.schema';
 import { PrismaService } from '@infra/database/prisma.service';
 import { ConversationService } from '../conversation/conversation.service';
+import { RedisModule } from '@infra/cache/redis.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }])
+    MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
+    RedisModule
   ],
   controllers: [MessageController],
   providers: [MessageService, PrismaService, ConversationService],

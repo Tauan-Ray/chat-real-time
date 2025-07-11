@@ -1,9 +1,10 @@
 import { PrismaService } from '@infra/database/prisma.service';
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { Message, MessageDocument } from './schema/message.schema';
 import { ConversationService } from '../conversation/conversation.service';
 import { InjectModel } from '@nestjs/mongoose';
+import Redis from 'ioredis';
 
 @Injectable()
 export class MessageService {
@@ -11,7 +12,9 @@ export class MessageService {
         private prisma: PrismaService,
         private conversationService: ConversationService,
         @InjectModel(Message.name)
-        private messageModel: Model<MessageDocument>
+        private messageModel: Model<MessageDocument>,
+        @Inject('REDIS_CLIENT')
+        private redisService: Redis
     ) {}
 
     async getMessages(userId: string, conversationId: string, page = 1, pageLimit = 25) {
@@ -73,16 +76,24 @@ export class MessageService {
             content
         })
 
-        const fullMessage = await this.messageModel.findById(createdMessage._id).exec()
+        createdMessage.save()
 
         await this.conversationService.updateConversation(
             userId,
             conversationId,
-            fullMessage._id.toString(),
-            fullMessage.createdAt
+            createdMessage._id.toString(),
+            createdMessage.createdAt
         )
 
-        return fullMessage
+        await this.redisService.set(`lastMessage:${conversationId}`, JSON.stringify(
+            {
+                content: createdMessage.content,
+                senderId: createdMessage.senderId,
+                createdAt: createdMessage.createdAt
+            }
+        ))
+
+        return createdMessage
     }
 
     async deleteMessage(userId: string, messageId: string) {

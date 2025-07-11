@@ -1,8 +1,10 @@
 import { PrismaService } from '@infra/database/prisma.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Message, MessageDocument } from '../message/schema/message.schema';
 import { Model } from 'mongoose';
+import { RedisService } from '@infra/cache/redis.service';
+import Redis from 'ioredis';
 
 
 @Injectable()
@@ -10,7 +12,9 @@ export class ConversationService {
     constructor(
         private prisma: PrismaService,
         @InjectModel(Message.name)
-        private messageModel: Model<MessageDocument>
+        private messageModel: Model<MessageDocument>,
+        @Inject('REDIS_CLIENT')
+        private redisService: Redis
     ) {}
 
     async getConversations(userId: string, page = 1, pageSize = 10) {
@@ -38,13 +42,35 @@ export class ConversationService {
             },
         })
 
-        const messageIds = conversations.map((c) => c.conversation.lastMessageId).filter(Boolean)
-        const messages = await this.messageModel.find({ _id: { $in: messageIds } }).lean()
+        const lastMessages = await Promise.all(
+            conversations.map(async (c) => {
+                let lastMessage = JSON.parse(await this.redisService.get(`lastMessage:${c.conversationId}`))
 
-        return conversations.map((c) => {
-            const lastMessage = messages.find(
-                (msg) => String(msg._id) === String(c.conversation.lastMessageId)
-            )
+                if (!lastMessage && c.conversation.lastMessageId) {
+                    const message = await this.messageModel.findById(c.conversation.lastMessageId).lean()
+
+                    if (message) {
+                        await this.redisService.set(`lastMessage:${c.conversationId}`, JSON.stringify(
+                            {
+                                content: message.content,
+                                senderId: message.senderId,
+                                createdAt: message.createdAt
+                            }
+                        ))
+
+                        lastMessage = {
+                            content: message.content,
+                            createdAt: message.createdAt
+                        }
+                    }
+                }
+
+                return lastMessage
+            })
+        )
+
+        return conversations.map((c, index) => {
+            const lastMessage = lastMessages[index]
 
             return {
                 conversationId: c.conversationId,
