@@ -5,6 +5,7 @@ import { Message, MessageDocument } from './schema/message.schema';
 import { ConversationService } from '../conversation/conversation.service';
 import { InjectModel } from '@nestjs/mongoose';
 import Redis from 'ioredis';
+import { MessageGateway } from './message.gateway';
 
 @Injectable()
 export class MessageService {
@@ -14,7 +15,8 @@ export class MessageService {
         @InjectModel(Message.name)
         private messageModel: Model<MessageDocument>,
         @Inject('REDIS_CLIENT')
-        private redisService: Redis
+        private redisService: Redis,
+        private messageGateway: MessageGateway
     ) {}
 
     async getMessages(userId: string, conversationId: string, page = 1, pageLimit = 25) {
@@ -64,7 +66,19 @@ export class MessageService {
                 userId,
                 deletedAt: null
             },
+            select: {
+                conversation: {
+                    select: {
+                        participants: {
+                            where: { userId: { not: userId } },
+                            select: { user: { select: { name: true } } }
+                        }
+                    }
+                }
+            }
         });
+
+        const otherParticipantName = participation.conversation.participants[0].user.name
 
         if (!participation) {
             throw new UnauthorizedException('Você não participa dessa conversa')
@@ -89,9 +103,16 @@ export class MessageService {
             {
                 content: createdMessage.content,
                 senderId: createdMessage.senderId,
-                createdAt: createdMessage.createdAt
+                createdAt: createdMessage.createdAt,
             }
         ))
+
+        await this.messageGateway.notifyNewMessage(conversationId, {
+            content: createdMessage.content,
+            senderId: createdMessage.senderId,
+            createdAt: createdMessage.createdAt,
+            participantName: otherParticipantName
+        })
 
         return createdMessage
     }

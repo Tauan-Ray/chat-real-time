@@ -3,7 +3,6 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Message, MessageDocument } from '../message/schema/message.schema';
 import { Model } from 'mongoose';
-import { RedisService } from '@infra/cache/redis.service';
 import Redis from 'ioredis';
 
 
@@ -22,50 +21,55 @@ export class ConversationService {
             where: {
                 userId,
                 deletedAt: null,
+                conversation: { lastMessageId : { not: null } }
             },
             skip: (page - 1) * pageSize,
             take: pageSize,
-            orderBy: {
-                conversation: {
-                    lastMessageDate: 'desc',
-                },
+            orderBy: { conversation: { lastMessageDate: 'desc' },
             },
             include: {
                 conversation: {
                     include: {
                         participants: {
                             where: { userId: { not: userId } },
-                            select: { user: { select: { name: true } } }
+                            select: { user: { select: { id:true, name: true } } }
                         },
                     },
                 },
             },
         })
 
+        type LastMessage = {
+            content: string
+            senderId: string
+            createdAt: Date
+            messageId: string
+        }
+
         const lastMessages = await Promise.all(
             conversations.map(async (c) => {
-                let lastMessage = JSON.parse(await this.redisService.get(`lastMessage:${c.conversationId}`))
+            const cached = await this.redisService.get(`lastMessage:${c.conversationId}`)
+            let lastMessage: LastMessage | null = cached ? JSON.parse(cached) : null
 
-                if (!lastMessage && c.conversation.lastMessageId) {
-                    const message = await this.messageModel.findById(c.conversation.lastMessageId).lean()
+            if (!lastMessage && c.conversation.lastMessageId) {
+                const message = await this.messageModel.findById(c.conversation.lastMessageId).lean()
 
-                    if (message) {
-                        await this.redisService.set(`lastMessage:${c.conversationId}`, JSON.stringify(
-                            {
-                                content: message.content,
-                                senderId: message.senderId,
-                                createdAt: message.createdAt
-                            }
-                        ))
-
-                        lastMessage = {
-                            content: message.content,
-                            createdAt: message.createdAt
-                        }
+                if (message) {
+                    lastMessage = {
+                        content: message.content,
+                        senderId: message.senderId,
+                        createdAt: message.createdAt,
+                        messageId: message._id.toString(),
                     }
-                }
 
-                return lastMessage
+                    await this.redisService.set(
+                        `lastMessage:${c.conversationId}`,
+                        JSON.stringify(lastMessage)
+                    )
+                }
+            }
+
+            return lastMessage
             })
         )
 
@@ -76,7 +80,8 @@ export class ConversationService {
                 conversationId: c.conversationId,
                 lastMessageContent: lastMessage?.content || null,
                 lastMessageDate: c.conversation.lastMessageDate,
-                name: c.conversation.participants[0]?.user.name || 'Desconhecido'
+                name: c.conversation.participants[0]?.user.name || 'Desconhecido',
+                lastMessageSenderId:  lastMessage ? lastMessage.senderId : null
             }
         })
     }
