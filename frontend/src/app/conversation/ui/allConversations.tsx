@@ -5,7 +5,7 @@ import OneConversation from "./oneConversation"
 import { getConversations } from "../lib/session"
 import { MessageCircleOff } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getSocket } from "@/service/socket/socket"
+import { useSocketEvent } from "@/hooks/use-socket-event"
 
 export type ConversationProps = {
   name: string;
@@ -29,29 +29,27 @@ const AllConversation = () => {
       setIsLoading(false)
     }
     fetchConversations()
+  }, [])
 
-    const socket = getSocket()
-
-    socket.on("receive_new_last_message", (message) => {
-      setConversations((prev) => prev.map((conv) => conv.conversationId === message.conversationId
-        ? { ...conv, lastMessageContent: message.content, lastMessageSenderId: message.senderId }
-        : conv
-      ))
-
-
-      // # Analisar depois: Forma de mostrar notificação de novas mensagens
+  useSocketEvent("receive_new_last_message", (message) => {
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.conversationId === message.conversationId
+          ? {
+              ...conv,
+              lastMessageContent: message.content,
+              lastMessageSenderId: message.senderId,
+            }
+          : conv
+      )
+    )
+    // # Analisar depois: Forma de mostrar notificação de novas mensagens
       // if (message.senderId !== user?.id) {
       //   toast.info(`Nova mensagem: ${message.participantName}`, {
       //     description: message.content
       //   })
       // }
-    })
-
-    return () => {
-      socket.off('receive_new_last_message')
-    }
-
-  }, [])
+  })
 
   return (
     <div className="space-y-4">

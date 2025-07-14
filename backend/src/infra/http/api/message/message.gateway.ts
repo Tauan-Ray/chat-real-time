@@ -4,6 +4,9 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
@@ -40,8 +43,19 @@ export class MessageGateway
     });
   }
 
-  joinConversation(conversationId: string, client: Socket) {
+  @SubscribeMessage('joinConversation')
+  handleJoinConeversation(
+    @MessageBody() conversationId: string,
+    @ConnectedSocket() client: Socket
+  ) {
     client.join(conversationId);
-    console.log(`${client.id} entrou na conversa ${conversationId}`);
+    console.log(`Cliente ${client.id} entrou na conversa: ${conversationId}`);
+  }
+
+  @SubscribeMessage('sendMessage')
+  handleSendMessage(
+    @MessageBody() payload: any,
+  ) {
+    this.server.to(payload.conversationId).emit('receiveMessage', payload);
   }
 }

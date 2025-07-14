@@ -37,7 +37,7 @@ export class MessageService {
         const messages = await this.messageModel.find({
             conversationId
         })
-        .sort({ createdAt: 1 })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageLimit)
         .exec()
@@ -78,11 +78,12 @@ export class MessageService {
             }
         });
 
-        const otherParticipantName = participation.conversation.participants[0].user.name
 
         if (!participation) {
             throw new UnauthorizedException('Você não participa dessa conversa')
         }
+
+        const otherParticipantName = participation.conversation.participants[0].user.name
 
         const createdMessage = await this.messageModel.create({
             conversationId,
