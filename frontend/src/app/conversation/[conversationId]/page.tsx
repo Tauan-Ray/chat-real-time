@@ -6,18 +6,21 @@ import AllMessages from "./ui/allMessages"
 import InputMessage from "./ui/inputMessage"
 import { getSocket } from "@/service/socket/socket"
 import { useEffect } from "react"
+import { useUser } from "@/contexts/user-context"
 
 const ChatConversationPage = () => {
   const params = useParams()
   const searchParams = useSearchParams()
+  const user = useUser()
 
   const conversationId = params.conversationId as string | undefined
   const participantName = searchParams.get("name") || "Usuário"
 
   useEffect(() => {
-    const socket = getSocket()
+    if (!user) return
+    const socket = getSocket(user.id)
     socket.emit('joinConversation', conversationId)
-  }, [conversationId])
+  }, [conversationId, user])
 
   if (!conversationId) return <div />
 

@@ -5,16 +5,19 @@ import { toast } from "sonner"
 import { getSocket } from "@/service/socket/socket"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useUser } from "@/contexts/user-context"
 
 export const InputMessage = ({ conversationId }: { conversationId: string }) => {
     const [message, setMessage] = useState("")
+    const user = useUser()
 
     const handleSubmitMessage =  async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!user) return
+
         if (message.trim() === "") return
 
         const res = await createMessage(conversationId, message)
-        console.log(res)
         if (res.status !== 200) {
             toast.error("Erro ao enviar a mensagem", {
                 description: res.message || "Tente novamente mais tarde"
@@ -23,7 +26,7 @@ export const InputMessage = ({ conversationId }: { conversationId: string }) => 
 
         setMessage("")
 
-        const socket = getSocket()
+        const socket = getSocket(user.id)
 
         socket.emit("sendMessage", res.data)
     }

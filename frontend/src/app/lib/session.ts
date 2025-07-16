@@ -67,15 +67,6 @@ export async function decrypt(session: string | undefined = '') {
   }
 }
 
-export async function getUser(): Promise<UserProps> {
-  return await service_api.get('/user')
-    .then(({ data }) => {
-      const { passwordHash, ...result } = data;
-      return result;
-    })
-    .catch(handleApiError)
-}
-
 
 export async function createSession(payload: SessionPayload, type: 'login' | 'register') {
   const session = await encrypt(payload, type)
@@ -139,4 +130,22 @@ export async function deleteSession() {
   const cookieStore = await cookies()
   cookieStore.delete(USER_TOKEN)
   cookieStore.delete(USER_REFRESH_TOKEN)
+}
+
+export async function getUser(): Promise<UserProps> {
+  return await service_api.get('/user')
+    .then(({ data }) => {
+      const { passwordHash, ...result } = data;
+      return result;
+    })
+    .catch(handleApiError)
+}
+
+export async function getUserByEmail(email: string) {
+  return await service_api.get(`/user/${email}`)
+    .then(({ data }) => {
+      const { passwordHash, ...result } = data;
+      return result;
+    })
+    .catch(handleApiError)
 }

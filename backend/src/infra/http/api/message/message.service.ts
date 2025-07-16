@@ -67,6 +67,7 @@ export class MessageService {
                 deletedAt: null
             },
             select: {
+                user: { select: { name: true} },
                 conversation: {
                     select: {
                         participants: {
@@ -83,8 +84,8 @@ export class MessageService {
             throw new UnauthorizedException('Você não participa dessa conversa')
         }
 
-        const otherParticipantName = participation.conversation.participants[0].user.name
-
+        const senderName = participation.user.name
+        
         const createdMessage = await this.messageModel.create({
             conversationId,
             senderId: userId,
@@ -112,7 +113,7 @@ export class MessageService {
             content: createdMessage.content,
             senderId: createdMessage.senderId,
             createdAt: createdMessage.createdAt,
-            participantName: otherParticipantName
+            participantName: senderName,
         })
 
         return createdMessage

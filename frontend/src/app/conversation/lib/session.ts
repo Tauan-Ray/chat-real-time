@@ -29,3 +29,17 @@ export async function getConversations(): Promise<GetConversationsResponse> {
       }
     })
 }
+
+export async function createConversation(participantId: string) {
+  return service_api.post('/conversation/create-conversation', { participantId })
+    .then(({ data, status }) => {
+      return {
+        status,
+        message: data || 'Conversa criada com sucesso',
+      }
+    })
+    .catch((error) => {
+      const { status, message } = handleApiError(error)
+      return { status, message }
+    })
+}

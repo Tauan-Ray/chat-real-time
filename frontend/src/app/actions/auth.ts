@@ -7,20 +7,21 @@ import { createSession, deleteSession } from "../lib/session";
 
 export async function signIn(value: z.infer<typeof LoginFormSchema>) {
   const res = await createSession(value, 'login');
+  console.log(res?.message)
 
   if (!res?.message) {
     return redirect('/conversation')
   } else {
-    if (res.status == HttpStatusCode.Unauthorized) {
-      toast.warning(res.message, {
-        description: "Usuário ou senha incorretos!",
+    if (res.status == HttpStatusCode.Unauthorized || HttpStatusCode.NotFound) {
+      toast.warning("Erro ao fazer login", {
+        description: "Email e/ou senha incorretos!",
       })
     } else {
-      console.log(res);
+        console.log(res);
 
-      toast.error(res.message, {
-        description: 'Falha na requisição, serviço indisponível.',
-      })
+        toast.error(res.message, {
+          description: 'Falha na requisição, serviço indisponível.',
+        })
     }
   }
 }

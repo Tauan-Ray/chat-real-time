@@ -1,4 +1,4 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Request, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -11,6 +11,11 @@ export class UserController {
   async findOne(@Request() req) {
     const { user } = req
     return await this.userService.findUnique(user.userId)
+  }
+
+  @Get('/:email')
+  async findByEmail(@Param('email') email: string) {
+    return await this.userService.findUnique(email)
   }
 
 }

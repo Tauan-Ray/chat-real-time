@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Message, MessageDocument } from '../message/schema/message.schema';
 import { Model } from 'mongoose';
 import Redis from 'ioredis';
+import { MessageGateway } from '../message/message.gateway';
 
 
 @Injectable()
@@ -13,7 +14,8 @@ export class ConversationService {
         @InjectModel(Message.name)
         private messageModel: Model<MessageDocument>,
         @Inject('REDIS_CLIENT')
-        private redisService: Redis
+        private redisService: Redis,
+        private messageGateway: MessageGateway
     ) {}
 
     async getConversations(userId: string, page = 1, pageSize = 10) {
@@ -87,6 +89,10 @@ export class ConversationService {
     }
 
     async createConversation(userId: string, otherParticipantId: string) {
+        if (userId === otherParticipantId) {
+            throw new UnauthorizedException('Não é possível criar uma conversa consigo mesmo')
+        }
+
         const conversation = await this.prisma.conversationUser.findFirst({
             where: {
                 userId: userId,
@@ -100,10 +106,19 @@ export class ConversationService {
                     },
                 },
             },
-            include: {
-                conversation: true,
-            },
-        });
+            select: {
+                conversation: {
+                    select: {
+                        id: true,
+                        createdAt: true,
+                        participants: {
+                            where: { userId: { not: userId } },
+                            select: { user: { select: { id: true, name: true } } }
+                        }
+                    }
+                }
+            }
+        })
 
         if (conversation) {
             return conversation
@@ -118,14 +133,23 @@ export class ConversationService {
                     ],
                 },
             },
-            include: {
+            select: {
+                id: true,
+                createdAt: true,
                 participants: {
-                    include: { user: true }
-                },
-            },
+                    where: { userId: { not: userId } },
+                    select: { user: { select: { id: true, name: true } } }
+                }
+            }
         })
 
-        return newConversation
+        console.log(newConversation.participants)
+        this.messageGateway.server.to(otherParticipantId).emit("newConversationCreated", {
+            conversationId: newConversation.id
+        });
+
+        return { conversation: newConversation }
+
     }
 
     async updateConversation(userId: string, conversationId: string, lastMessageId: string, lastMessageDate: Date) {

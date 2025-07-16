@@ -26,8 +26,15 @@ export class MessageGateway
   }
 
   handleConnection(client: Socket) {
-    console.log(`Cliente conectado: ${client.id}`);
+    const userId = client.handshake.query.userId as string;
+    if (userId) {
+      client.join(userId);
+      console.log(`Cliente ${client.id} conectado como usuário ${userId}`);
+    } else {
+      console.log(`Cliente ${client.id} conectado sem userId`);
+    }
   }
+
 
   handleDisconnect(client: Socket) {
     console.log(`Cliente desconectado: ${client.id}`);
@@ -39,7 +46,7 @@ export class MessageGateway
       content: message.content,
       senderId: message.senderId,
       createdAt: message.createdAt,
-      participantName: message.participantName
+      participantName: message.participantName,
     });
   }
 

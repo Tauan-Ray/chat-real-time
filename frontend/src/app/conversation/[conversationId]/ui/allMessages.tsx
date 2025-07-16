@@ -85,8 +85,13 @@ const AllMessages = ({ conversationId }: { conversationId: string }) => {
 
 
   useSocketEvent("receiveMessage", (data) => {
-    setMessages((prev) => [data, ...prev])
-  })
+    setMessages((prev) => {
+      if (prev.some((m) => m._id === data._id)) {
+        return prev;
+      }
+      return [data, ...prev];
+    });
+  });
 
   return (
     <div

@@ -15,5 +15,6 @@ import { MessageGateway } from './message.gateway';
   ],
   controllers: [MessageController],
   providers: [MessageService, PrismaService, ConversationService, MessageGateway],
+  exports: [MessageGateway]
 })
 export class MessageModule {}
