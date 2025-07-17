@@ -1,7 +1,7 @@
 "use client"
 
-import { logout } from "@/app/actions/auth";
-import { deleteSession, getUser, UserProps } from "@/app/lib/session"
+import { logout } from "@/app/auth/actions/auth";
+import { deleteSession, getUser, UserProps } from "@/app/auth/lib/session";
 import { HttpStatusCode } from "axios";
 import * as React from "react"
 import { toast } from "sonner";

@@ -1,6 +1,6 @@
 "use client"
 
-import { getUserByEmail } from "@/app/lib/session"
+import { getUserByEmail } from "../auth/lib/session"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"

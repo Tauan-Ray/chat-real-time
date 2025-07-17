@@ -1,3 +1,4 @@
+import { UserProvider } from "@/contexts/user-context";
 import "./globals.css"
 import { Toaster } from "sonner";
 
@@ -10,7 +11,9 @@ export default function RootLayout({
     <html lang="pt-br">
       <body className="min-h-screen bg-background">
         <Toaster position="top-right" richColors />
-        {children}
+        <UserProvider>
+           {children}
+        </UserProvider>
       </body>
     </html>
   );

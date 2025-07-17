@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { cookies } from "next/headers";
 import { USER_TOKEN } from '@/lib';
-import { updateSession } from '@/app/lib/session';
+import { updateSession } from '@/app/auth/lib/session';
 
 const service_api = axios.create({
   baseURL: `http://localhost:3000`,

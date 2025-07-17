@@ -142,8 +142,6 @@ export class ConversationService {
                 }
             }
         })
-
-        console.log(newConversation.participants)
         this.messageGateway.server.to(otherParticipantId).emit("newConversationCreated", {
             conversationId: newConversation.id
         });

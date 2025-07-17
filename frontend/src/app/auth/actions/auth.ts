@@ -7,10 +7,9 @@ import { createSession, deleteSession } from "../lib/session";
 
 export async function signIn(value: z.infer<typeof LoginFormSchema>) {
   const res = await createSession(value, 'login');
-  console.log(res?.message)
 
   if (!res?.message) {
-    return redirect('/conversation')
+    return redirect('/')
   } else {
     if (res.status == HttpStatusCode.Unauthorized || HttpStatusCode.NotFound) {
       toast.warning("Erro ao fazer login", {
@@ -31,7 +30,7 @@ export async function registerUser(value: z.infer<typeof RegisterFormSchema>) {
   const res = await createSession(userData, 'register')
 
   if (!res?.message) {
-    return redirect('/conversation')
+    return redirect('/')
   } else {
     if (res.status === HttpStatusCode.BadRequest) {
       toast.warning(res.message, {
@@ -49,5 +48,5 @@ export async function registerUser(value: z.infer<typeof RegisterFormSchema>) {
 
 export async function logout() {
   deleteSession()
-  redirect('/')
+  redirect('/auth/signin')
 }

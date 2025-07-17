@@ -21,7 +21,7 @@ export type ConversationProps = {
   lastMessageDate: string;
 }
 
-const AllConversation = () => {
+const AllConversations = () => {
   const [conversations, setConversations] = useState<ConversationProps[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const user = useUser()
@@ -50,7 +50,6 @@ const AllConversation = () => {
   }, [user])
 
   useSocketEvent("receive_new_last_message", (message) => {
-    console.log("Nova mensagem recebida:", message)
     setConversations((prev) => {
       if (prev.some((conv) => conv.conversationId === message.conversationId)) {
         return prev.map((conv) =>
@@ -146,4 +145,4 @@ const AllConversation = () => {
   )
 }
 
-export default AllConversation
+export default AllConversations
