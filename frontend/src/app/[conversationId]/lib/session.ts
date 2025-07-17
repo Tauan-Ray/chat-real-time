@@ -9,7 +9,7 @@ export type getMessagesProps = {
     conversationId: string;
     createdAt: string;
     deletedAt: string;
-    readBy: [];
+    readBy: string[];
     senderId: string;
     updatedAt: string;
     __v: number

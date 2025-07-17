@@ -5,6 +5,7 @@ import { getMessages, getMessagesProps } from "../lib/session"
 import { useUser } from "@/contexts/user-context"
 import { useSocketEvent } from "@/hooks/use-socket-event"
 import OneMessage from "./oneMessage"
+import { getSocket } from "@/service/socket/socket"
 
 const AllMessages = ({ conversationId }: { conversationId: string }) => {
   const [messages, setMessages] = useState<getMessagesProps[]>([])
@@ -69,6 +70,25 @@ const AllMessages = ({ conversationId }: { conversationId: string }) => {
     fetchMessages(1)
   }, [conversationId, fetchMessages])
 
+  useEffect(() => {
+    if (!user) return
+
+    const socket = getSocket(user.id)
+
+    const unreadMessages = messages.filter(
+      (msg) => !msg.readBy.includes(user.id) && msg.senderId !== user.id
+    )
+
+    unreadMessages.forEach((msg) => {
+      socket.emit("markAsRead", {
+        messageId: msg._id,
+        userId: user.id,
+        conversationId
+      })
+    })
+
+  },[user, messages, conversationId])
+
 
   useEffect(() => {
     const container = containerRef.current
@@ -93,6 +113,17 @@ const AllMessages = ({ conversationId }: { conversationId: string }) => {
     });
   });
 
+  useSocketEvent('messageRead', (data) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg._id === data.messageId && !msg.readBy.includes(data.userId)
+          ? { ...msg, readBy: [...msg.readBy, data.userId] }
+          : msg
+      )
+    );
+  });
+
+
   return (
     <div
       ref={containerRef}
@@ -107,6 +138,7 @@ const AllMessages = ({ conversationId }: { conversationId: string }) => {
           date={m.createdAt}
           deletedAt={m.deletedAt}
           owner={m.senderId === user?.id ? "me" : "other"}
+          readBy={m.readBy}
         />
       ))}
     </div>

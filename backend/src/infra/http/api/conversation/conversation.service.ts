@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Message, MessageDocument } from '../message/schema/message.schema';
 import { Model } from 'mongoose';
 import Redis from 'ioredis';
-import { MessageGateway } from '../message/message.gateway';
+import { MessageSocketService } from '../message/message-socket.service';
 
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ConversationService {
         private messageModel: Model<MessageDocument>,
         @Inject('REDIS_CLIENT')
         private redisService: Redis,
-        private messageGateway: MessageGateway
+        private messageSocketService: MessageSocketService
     ) {}
 
     async getConversations(userId: string, page = 1, pageSize = 10) {
@@ -142,9 +142,9 @@ export class ConversationService {
                 }
             }
         })
-        this.messageGateway.server.to(otherParticipantId).emit("newConversationCreated", {
+        this.messageSocketService.emitNewConversation(otherParticipantId, {
             conversationId: newConversation.id
-        });
+        })
 
         return { conversation: newConversation }
 

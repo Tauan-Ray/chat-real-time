@@ -5,7 +5,7 @@ import { Message, MessageDocument } from './schema/message.schema';
 import { ConversationService } from '../conversation/conversation.service';
 import { InjectModel } from '@nestjs/mongoose';
 import Redis from 'ioredis';
-import { MessageGateway } from './message.gateway';
+import { MessageSocketService } from './message-socket.service';
 
 @Injectable()
 export class MessageService {
@@ -16,7 +16,7 @@ export class MessageService {
         private messageModel: Model<MessageDocument>,
         @Inject('REDIS_CLIENT')
         private redisService: Redis,
-        private messageGateway: MessageGateway
+        private messageSocketService: MessageSocketService
     ) {}
 
     async getMessages(userId: string, conversationId: string, page = 1, pageLimit = 25) {
@@ -85,7 +85,7 @@ export class MessageService {
         }
 
         const senderName = participation.user.name
-        
+
         const createdMessage = await this.messageModel.create({
             conversationId,
             senderId: userId,
@@ -109,7 +109,7 @@ export class MessageService {
             }
         ))
 
-        await this.messageGateway.notifyNewMessage(conversationId, {
+        this.messageSocketService.emitNewMessage(conversationId, {
             content: createdMessage.content,
             senderId: createdMessage.senderId,
             createdAt: createdMessage.createdAt,
@@ -150,6 +150,4 @@ export class MessageService {
 
         return { message: 'Mensagem marcada como lida' }
     }
-
-
 }

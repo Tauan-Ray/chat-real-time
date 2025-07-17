@@ -9,6 +9,8 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { MessageService } from './message.service';
+import { MessageSocketService } from './message-socket.service';
 
 @WebSocketGateway({
   cors: {
@@ -18,10 +20,16 @@ import { Server, Socket } from 'socket.io';
 export class MessageGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  constructor(
+    private messageService: MessageService,
+    private messageSocketService: MessageSocketService
+  ) {}
+
   @WebSocketServer()
   server: Server;
 
   afterInit(server: Server) {
+    this.messageSocketService.setServer(server)
     console.log('WebSocket inicializado');
   }
 
@@ -40,16 +48,6 @@ export class MessageGateway
     console.log(`Cliente desconectado: ${client.id}`);
   }
 
-  async notifyNewMessage(conversationId: string, message: any) {
-    this.server.to(conversationId).emit('receive_new_last_message', {
-      conversationId,
-      content: message.content,
-      senderId: message.senderId,
-      createdAt: message.createdAt,
-      participantName: message.participantName,
-    });
-  }
-
   @SubscribeMessage('joinConversation')
   handleJoinConeversation(
     @MessageBody() conversationId: string,
@@ -63,6 +61,23 @@ export class MessageGateway
   handleSendMessage(
     @MessageBody() payload: any,
   ) {
-    this.server.to(payload.conversationId).emit('receiveMessage', payload);
+    this.messageSocketService.emitMessage(payload)
+  }
+
+  @SubscribeMessage('markAsRead')
+  async handleMarkAsRead (
+    @MessageBody() payload: { messageId: string, userId: string, conversationId: string },
+    @ConnectedSocket() client: Socket
+  ) {
+    try {
+      await this.messageService.markRead(payload.userId, payload.messageId)
+
+      this.messageSocketService.emitMessageRead(payload.conversationId, {
+        messageId: payload.messageId,
+        userId: payload.userId,
+      });
+    } catch (error) {
+      client.emit('error', { error: error.message })
+    }
   }
 }

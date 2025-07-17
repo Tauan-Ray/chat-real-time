@@ -5,12 +5,12 @@ import { PrismaService } from '@infra/database/prisma.service';
 import { Message, MessageSchema } from '../message/schema/message.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RedisModule } from '@infra/cache/redis.module';
-import { MessageGateway } from '../message/message.gateway';
+import { MessageSocketService } from '../message/message-socket.service';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]), RedisModule],
   controllers: [ConversationController],
-  providers: [ConversationService, PrismaService, MessageGateway],
+  providers: [ConversationService, PrismaService, MessageSocketService],
   exports: [ConversationService]
 })
 export class ConversationModule {}

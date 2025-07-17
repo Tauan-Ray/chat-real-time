@@ -7,6 +7,7 @@ import { PrismaService } from '@infra/database/prisma.service';
 import { ConversationService } from '../conversation/conversation.service';
 import { RedisModule } from '@infra/cache/redis.module';
 import { MessageGateway } from './message.gateway';
+import { MessageSocketService } from './message-socket.service';
 
 @Module({
   imports: [
@@ -14,7 +15,13 @@ import { MessageGateway } from './message.gateway';
     RedisModule
   ],
   controllers: [MessageController],
-  providers: [MessageService, PrismaService, ConversationService, MessageGateway],
-  exports: [MessageGateway]
+  providers: [
+    MessageService,
+    PrismaService,
+    ConversationService,
+    MessageGateway,
+    MessageSocketService
+  ],
+  exports: [MessageSocketService]
 })
 export class MessageModule {}
