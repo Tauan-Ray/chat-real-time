@@ -35,7 +35,7 @@ const SearchUser = () => {
 
     const conversation = await createConversation(res.id)
     const nameOtherParticipant = conversation.message.conversation.participants[0].user.name
-    const urlConversation = `/conversation/${conversation.message.conversation.id}?name=${nameOtherParticipant}`
+    const urlConversation = `/${conversation.message.conversation.id}?name=${nameOtherParticipant}`
 
     redirect(urlConversation)
   }

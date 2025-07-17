@@ -5,7 +5,7 @@ const HeaderChat = ({ participantName }: { participantName: string }) => {
   return (
     <header className="flex items-center gap-3 bg-surface p-4 border-b border-border">
       <button
-        onClick={() => redirect('/conversation')}
+        onClick={() => redirect('/')}
         className="p-2 rounded-md hover:bg-hover transition"
       >
         <ArrowLeft className="text-text-primary" size={20} />

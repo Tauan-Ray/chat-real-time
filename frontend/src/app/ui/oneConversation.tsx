@@ -10,7 +10,7 @@ const OneConversation = ({ conversationId, name: ParticipantName, lastMessageCon
     const lastMessageLimit = lastMessageContent.length > 60 ? lastMessageContent.slice(0, 60) + '...' : lastMessageContent
 
     const handleRedirectChat = () => {
-        redirect(`/conversation/${conversationId}?name=${encodeURIComponent(ParticipantName)}`)
+        redirect(`${conversationId}?name=${encodeURIComponent(ParticipantName)}`)
     }
 
     return (

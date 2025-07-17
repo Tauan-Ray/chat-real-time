@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import OneConversation from "./oneConversation";
 import { getConversations } from "../lib/session";
 import { MessageCircleOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSocketEvent } from "@/hooks/use-socket-event";
-import SearchUser from "./searchUsers";
 import { getSocket } from "@/service/socket/socket";
 import { useUser } from "@/contexts/user-context";
 import { toast } from "sonner";
@@ -21,10 +20,23 @@ export type ConversationProps = {
   lastMessageDate: string;
 }
 
-const AllConversations = () => {
+type AllConversationProps = {
+  query?: string;
+}
+
+const AllConversations = ({ query }: AllConversationProps) => {
   const [conversations, setConversations] = useState<ConversationProps[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const user = useUser()
+
+  const filteredConversations = useMemo(() => {
+    const lowerQuery = query?.toLowerCase().trim() || "";
+
+    return conversations.filter((conv) =>
+      conv.name.toLowerCase().includes(lowerQuery)
+    );
+  }, [query, conversations]);
+
 
   useEffect(() => {
     if (!user) return
@@ -90,7 +102,7 @@ const AllConversations = () => {
         <Button
           onClick={() => {
             toast.dismiss(t)
-            redirect(`/conversation/${message.conversationId}?name=${message.participantName}`)
+            redirect(`${message.conversationId}?name=${message.participantName}`)
           }}
         >
           Abrir
@@ -109,8 +121,6 @@ const AllConversations = () => {
 
   return (
     <div className="space-y-4">
-      <SearchUser />
-
       {isLoading ? (
         <div className="flex items-center justify-between bg-secondary rounded-md p-4 animate-pulse">
           <div className="flex flex-col gap-2">
@@ -119,7 +129,7 @@ const AllConversations = () => {
           </div>
           <Skeleton className="h-4 w-12 rounded-md bg-border" />
         </div>
-      ) : conversations.length === 0 ? (
+      ) : filteredConversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-slate-300">
           <MessageCircleOff size={48} className="mb-4" />
           <p className="text-lg font-medium">
@@ -130,7 +140,7 @@ const AllConversations = () => {
           </p>
         </div>
       ) : (
-        conversations.map((conversation) => (
+        filteredConversations.map((conversation) => (
           <OneConversation
             key={conversation.conversationId}
             conversationId={conversation.conversationId}
